@@ -28,13 +28,14 @@ object Interaction {
     * @param tile         Tile coordinates
     * @return A 256×256 image showing the contents of the given tile
     */
-  def tile(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)], tile: Tile): Image = {
+  def tile(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)], tile: Tile, scaleFactor:Int = 1): Image = {
+    val tileSize = TILE_SIZE / scaleFactor
     val locations = for {
-      y <- (TILE_SIZE * tile.y) until (TILE_SIZE * tile.y + TILE_SIZE)
-      x <- (TILE_SIZE * tile.x) until (TILE_SIZE * tile.x + TILE_SIZE)
-    } yield Tile(x, y, tile.zoom + SUB_TILE_ZOOM)
+      y <- (tileSize * tile.y) until (tileSize * tile.y + tileSize)
+      x <- (tileSize * tile.x) until (tileSize * tile.x + tileSize)
+    } yield Tile(x, y, tile.zoom + SUB_TILE_ZOOM - (scaleFactor - 1))
 
-    val pixels = Array.fill(TILE_SIZE * TILE_SIZE) {
+    val pixels = Array.fill(tileSize * tileSize) {
       BROKEN_PIXEL
     }
 
@@ -44,7 +45,7 @@ object Interaction {
       pixels(i) = Pixel(color.red, color.green, color.blue, ALPHA_LEVEL)
     })
 
-    Image(TILE_SIZE, TILE_SIZE, pixels)
+    Image(tileSize, tileSize, pixels).scale(scaleFactor)
   }
 
   /**
@@ -63,10 +64,6 @@ object Interaction {
         y <- 0 until pow(2, zoom).toInt
       } yield generateImage(i._1, Tile(x, y, zoom), i._2)
     })
-  }
-
-  def main(args: Array[String]): Unit = {
-
   }
 
 }

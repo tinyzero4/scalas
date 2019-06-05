@@ -91,20 +91,22 @@ object Visualization {
     * @param colors       Color scale
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
-  def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
-    val pixels = Array.fill(IMAGE_WIDTH_PX * IMAGE_HEIGHT_PX){BROKEN_PIXEL}
+  def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)], scaleFactor:Int = 1): Image = {
+    val width = IMAGE_WIDTH_PX / scaleFactor
+    val height = IMAGE_HEIGHT_PX / scaleFactor
+
+    val pixels = Array.fill(width * height){BROKEN_PIXEL}
 
     pixels.indices.par.foreach(i => {
-      val y = i % IMAGE_WIDTH_PX
-      val x = i / IMAGE_WIDTH_PX
+      val y = i % width
+      val x = i / width
       val location = Location(LAT_MAX - y, x - LON_MAX)
       val color = interpolateColor(colors, predictTemperature(temperatures, location))
       pixels(i) = Pixel(color.red, color.green, color.blue, ALPHA_LEVEL)
     })
 
-    Image(IMAGE_WIDTH_PX, IMAGE_HEIGHT_PX, pixels)
+    Image(width, height, pixels).scale(scaleFactor)
   }
-
 
   private[observatory] def greatestCircleDistance(loc1: Location, loc2: Location): Double = {
     def _sin(d: Double): Double = sin(toRadians(d))

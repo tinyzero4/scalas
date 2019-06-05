@@ -1,5 +1,6 @@
 package observatory
 
+import observatory.Common._
 import observatory.Visualization.predictTemperature
 
 
@@ -8,18 +9,13 @@ import observatory.Visualization.predictTemperature
   */
 object Manipulation {
 
-  private[observatory] val GRID_LAT_MIN = -89
-  private[observatory] val GRID_LAT_MAX = 90
-  private[observatory] val GRID_LON_MIN = -180
-  private[observatory] val GRID_LON_MAX = 179
-
   /**
     * @param temperatures Known temperatures
     * @return A function that, given a latitude in [-89, 90] and a longitude in [-180, 179],
     *         returns the predicted temperature at this location
     */
   def makeGrid(temperatures: Iterable[(Location, Temperature)]): GridLocation => Temperature = {
-    val grid = generateGridLocations.par.aggregate(Map[GridLocation, Temperature]())(
+    val grid = generateGridLocations.aggregate(Map[GridLocation, Temperature]())(
       (agg, loc) => agg + (loc -> predictTemperature(temperatures, Location(loc.lat, loc.lon))),
       (agg1, agg2) => agg1 ++ agg2
     )
@@ -43,7 +39,7 @@ object Manipulation {
     val grids = temperaturess.par.map(makeGrid)
 
     val averages = generateGridLocations.par.aggregate(Map[GridLocation, Temperature]())(
-      (agg, loc) => agg + (loc -> grids.map(_(loc)).sum / grids.size),
+      (agg, loc) => agg + (loc -> grids.map(_ (loc)).sum / grids.size),
       (agg1, agg2) => agg1 ++ agg2
     )
 
@@ -57,7 +53,7 @@ object Manipulation {
     */
   def deviation(temperatures: Iterable[(Location, Temperature)], normals: GridLocation => Temperature): GridLocation => Temperature = {
     val grid = makeGrid(temperatures)
-    val deviations = generateGridLocations.par.aggregate(Map[GridLocation, Temperature]()) (
+    val deviations = generateGridLocations.par.aggregate(Map[GridLocation, Temperature]())(
       (agg, loc) => agg + (loc -> (grid(loc) - normals(loc))),
       (agg1, agg2) => agg1 ++ agg2
     )
